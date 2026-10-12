@@ -1,21 +1,22 @@
 <?php
 require 'verificar_cajero.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $mensaje = '';
 $tipoMensaje = '';
 $no_cuenta = $monto = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $no_cuenta = trim($_POST['no_cuenta'] ?? '');
-    $monto = trim($_POST['monto'] ?? '');
+    validar_csrf();
+    $no_cuenta = entrada_texto('no_cuenta');
+    $monto = entrada_texto('monto');
 
     $errores = [];
 
     if ($no_cuenta === '') {
         $errores[] = 'El número de cuenta es obligatorio.';
     }
-    if ($monto === '' || !is_numeric($monto) || $monto <= 0) {
+    if (!monto_valido($monto)) {
         $errores[] = 'La cantidad a debitar debe ser un número mayor a cero.';
     }
 
@@ -26,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $cuenta = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
         if (!$cuenta) {
             $errores[] = 'La cuenta no existe.';
@@ -35,19 +37,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errores)) {
-        $monto_num = (float)$monto;
+        $monto_num = $monto;
         $stmt = $mysqli->prepare('CALL sp_retiro(?, ?)');
-        $stmt->bind_param('sd', $no_cuenta, $monto_num);
+        $stmt->bind_param('ss', $no_cuenta, $monto_num);
 
         if ($stmt->execute()) {
             $mensaje = 'Retiro realizado correctamente.';
             $tipoMensaje = 'mensaje-exito';
             $no_cuenta = $monto = '';
         } else {
-            $mensaje = 'Error al realizar el retiro: ' . $stmt->error;
+            $mensaje = 'Error al realizar el retiro: ' . error_operacion($stmt);
             $tipoMensaje = 'mensaje-error';
         }
         $stmt->close();
+        limpiar_resultados($mysqli);
     } else {
         $mensaje = implode('<br>', $errores);
         $tipoMensaje = 'mensaje-error';
@@ -65,6 +68,7 @@ require 'cabecera.php';
 <div class="card">
     <h2>Retiro monetario</h2>
     <form action="cajero_retiro.php" method="POST">
+        <?= csrf_campo() ?>
         <div class="field">
             <label for="no_cuenta">No. de cuenta</label>
             <input type="text" id="no_cuenta" name="no_cuenta" maxlength="20" required value="<?= htmlspecialchars($no_cuenta) ?>">

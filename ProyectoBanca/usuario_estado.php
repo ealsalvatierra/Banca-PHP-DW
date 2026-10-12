@@ -1,6 +1,6 @@
 <?php
 require 'verificar_usuario.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $no_cuenta = $_SESSION['no_cuenta'];
 

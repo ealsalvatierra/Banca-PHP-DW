@@ -1,6 +1,6 @@
 <?php
 require 'verificar_usuario.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $correo = $_SESSION['usuario'];
 
@@ -9,20 +9,21 @@ $tipoMensaje = '';
 $no_cuenta = $monto_maximo = $max_transacciones = $alias = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $no_cuenta = trim($_POST['no_cuenta'] ?? '');
-    $monto_maximo = trim($_POST['monto_maximo'] ?? '');
-    $max_transacciones = trim($_POST['max_transacciones'] ?? '');
-    $alias = trim($_POST['alias'] ?? '');
+    validar_csrf();
+    $no_cuenta = entrada_texto('no_cuenta');
+    $monto_maximo = entrada_texto('monto_maximo');
+    $max_transacciones = entrada_texto('max_transacciones');
+    $alias = entrada_texto('alias');
 
     $errores = [];
 
     if ($no_cuenta === '' || strlen($no_cuenta) > 20) {
         $errores[] = 'El número de cuenta es obligatorio y debe tener máximo 20 caracteres.';
     }
-    if ($monto_maximo === '' || !is_numeric($monto_maximo) || $monto_maximo <= 0) {
+    if (!monto_valido($monto_maximo)) {
         $errores[] = 'El monto máximo debe ser un número mayor a cero.';
     }
-    if ($max_transacciones === '' || !ctype_digit($max_transacciones) || $max_transacciones <= 0) {
+    if ($max_transacciones === '' || !ctype_digit($max_transacciones) || ($max_transacciones <= 0 || $max_transacciones > 2147483647)) {
         $errores[] = 'La cantidad máxima de transacciones diarias debe ser un número entero mayor a cero.';
     }
     if ($alias === '' || strlen($alias) > 40) {
@@ -36,27 +37,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
-        if ($fila['total'] == 0) {
+        if ($no_cuenta === $_SESSION['no_cuenta']) {
+            $errores[] = 'No puede agregar su propia cuenta como tercero.';
+        } elseif ($fila['total'] == 0) {
             $errores[] = 'La cuenta bancaria no existe.';
         }
     }
 
     if (empty($errores)) {
-        $monto_num = (float)$monto_maximo;
+        $monto_num = $monto_maximo;
         $max_num = (int)$max_transacciones;
         $stmt = $mysqli->prepare('CALL sp_tercero_insertar(?, ?, ?, ?, ?)');
-        $stmt->bind_param('ssdis', $correo, $no_cuenta, $monto_num, $max_num, $alias);
+        $stmt->bind_param('sssis', $correo, $no_cuenta, $monto_num, $max_num, $alias);
 
         if ($stmt->execute()) {
             $mensaje = 'Cuenta de tercero agregada correctamente.';
             $tipoMensaje = 'mensaje-exito';
             $no_cuenta = $monto_maximo = $max_transacciones = $alias = '';
         } else {
-            $mensaje = 'Error al agregar la cuenta de tercero: ' . $stmt->error;
+            $mensaje = 'Error al agregar la cuenta de tercero: ' . error_operacion($stmt);
             $tipoMensaje = 'mensaje-error';
         }
         $stmt->close();
+        limpiar_resultados($mysqli);
     } else {
         $mensaje = implode('<br>', $errores);
         $tipoMensaje = 'mensaje-error';
@@ -103,6 +108,7 @@ require 'cabecera.php';
 <div class="card">
     <h2>Agregar cuenta de tercero</h2>
     <form action="usuario_terceros.php" method="POST">
+        <?= csrf_campo() ?>
         <div class="field">
             <label for="no_cuenta">No. de cuenta</label>
             <input type="text" id="no_cuenta" name="no_cuenta" maxlength="20" required value="<?= htmlspecialchars($no_cuenta) ?>">

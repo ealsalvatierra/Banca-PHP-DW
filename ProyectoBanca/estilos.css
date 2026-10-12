@@ -666,3 +666,6 @@ table tr:last-child td {
         transition: none;
     }
 }
+
+.logout-form { margin: 0; }
+.logout-button { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 0; }

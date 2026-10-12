@@ -1,6 +1,6 @@
 <?php
 require 'verificar_admin.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $tipos = [
     'cuentas'       => ['Cuentas creadas hoy', 'sp_detalle_cuentas_dia'],

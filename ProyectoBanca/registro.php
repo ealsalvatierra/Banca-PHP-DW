@@ -1,16 +1,17 @@
 <?php
-require 'conexion.php';
+require_once 'conexion.php';
 
 $mensaje = '';
 $tipoMensaje = '';
 $no_cuenta = $correo = $dpi = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $no_cuenta = trim($_POST['no_cuenta'] ?? '');
-    $correo = trim($_POST['correo'] ?? '');
-    $dpi = trim($_POST['dpi'] ?? '');
-    $clave = trim($_POST['clave'] ?? '');
-    $confirmar = trim($_POST['confirmar'] ?? '');
+    validar_csrf();
+    $no_cuenta = entrada_texto('no_cuenta');
+    $correo = entrada_texto('correo');
+    $dpi = entrada_texto('dpi');
+    $clave = entrada_texto('clave');
+    $confirmar = entrada_texto('confirmar');
 
     $errores = [];
 
@@ -23,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($dpi === '' || !ctype_digit($dpi) || strlen($dpi) != 13) {
         $errores[] = 'El DPI es obligatorio y debe tener 13 dígitos.';
     }
-    if ($clave === '' || strlen($clave) > 20) {
-        $errores[] = 'La contraseña es obligatoria y debe tener máximo 20 caracteres.';
+    if (strlen($clave) < 8 || strlen($clave) > 72) {
+        $errores[] = 'La contraseña debe tener entre 8 y 72 caracteres.';
     }
     if ($clave !== $confirmar) {
         $errores[] = 'La contraseña y su confirmación no coinciden.';
@@ -37,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $cuenta = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
         if (!$cuenta) {
             $errores[] = 'La cuenta bancaria no existe. Debe crearla primero en el banco.';
@@ -49,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resultado = $stmt->get_result();
             $fila = $resultado->fetch_assoc();
             $stmt->close();
+        limpiar_resultados($mysqli);
 
             if ($fila['total'] > 0) {
                 $errores[] = 'Ya existe un usuario registrado para esa cuenta bancaria.';
@@ -63,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
         if ($fila['total'] > 0) {
             $errores[] = 'El correo electrónico ya está registrado.';
@@ -70,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errores)) {
+        $clave = password_hash($clave, PASSWORD_DEFAULT);
         $stmt = $mysqli->prepare('CALL sp_usuario_insertar(?, ?, ?, ?)');
         $stmt->bind_param('ssss', $correo, $clave, $no_cuenta, $dpi);
 
@@ -78,10 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tipoMensaje = 'mensaje-exito';
             $no_cuenta = $correo = $dpi = '';
         } else {
-            $mensaje = 'Error al registrar el usuario: ' . $stmt->error;
+            $mensaje = 'Error al registrar el usuario: ' . error_operacion($stmt);
             $tipoMensaje = 'mensaje-error';
         }
         $stmt->close();
+        limpiar_resultados($mysqli);
     } else {
         $mensaje = implode('<br>', $errores);
         $tipoMensaje = 'mensaje-error';
@@ -111,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form action="registro.php" method="POST">
+        <?= csrf_campo() ?>
             <div class="field">
                 <label for="no_cuenta">No. de cuenta bancaria</label>
                 <input type="text" id="no_cuenta" name="no_cuenta" maxlength="20" required value="<?= htmlspecialchars($no_cuenta) ?>">
@@ -125,11 +132,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="field">
                 <label for="clave">Contraseña</label>
-                <input type="password" id="clave" name="clave" maxlength="20" required>
+                <input type="password" id="clave" name="clave" maxlength="72" required>
             </div>
             <div class="field">
                 <label for="confirmar">Confirmar contraseña</label>
-                <input type="password" id="confirmar" name="confirmar" maxlength="20" required>
+                <input type="password" id="confirmar" name="confirmar" maxlength="72" required>
             </div>
             <input type="submit" class="full" value="Registrarme">
         </form>

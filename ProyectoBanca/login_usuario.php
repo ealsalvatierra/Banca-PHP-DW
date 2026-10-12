@@ -1,31 +1,26 @@
 <?php
-session_start();
-require 'conexion.php';
-
+require_once 'seguridad.php';
+require_once 'conexion.php';
 $mensaje = '';
 $correo = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $correo = trim($_POST['correo'] ?? '');
-    $clave = trim($_POST['clave'] ?? '');
-
-    $stmt = $mysqli->prepare('CALL sp_login_usuario(?, ?)');
-    $stmt->bind_param('ss', $correo, $clave);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    $fila = $resultado->fetch_assoc();
-    $stmt->close();
-
+    validar_csrf();
+    $correo = entrada_texto('correo');
+    $clave = entrada_texto('clave');
+    $fila = autenticar($mysqli, 'usuario', $correo, $clave);
     if ($fila) {
+        session_regenerate_id(true);
+        $_SESSION = [];
         $_SESSION['rol'] = 'usuario';
         $_SESSION['usuario'] = $correo;
         $_SESSION['nombre'] = $correo;
         $_SESSION['no_cuenta'] = $fila['no_cuenta'];
+        $_SESSION['autenticada'] = true;
+        $_SESSION['ultima_actividad'] = time();
         header('Location: usuario_panel.php');
         exit;
-    } else {
-        $mensaje = 'Usuario o contraseña incorrectos.';
     }
+    $mensaje = 'Usuario o contraseña incorrectos.';
 }
 ?>
 <!DOCTYPE html>
@@ -51,13 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form action="login_usuario.php" method="POST">
+        <?= csrf_campo() ?>
             <div class="field">
                 <label for="correo">Correo electrónico</label>
                 <input type="email" id="correo" name="correo" maxlength="50" required value="<?= htmlspecialchars($correo) ?>">
             </div>
             <div class="field">
                 <label for="clave">Contraseña</label>
-                <input type="password" id="clave" name="clave" maxlength="20" required>
+                <input type="password" id="clave" name="clave" maxlength="72" required>
             </div>
             <input type="submit" class="full" value="Ingresar">
         </form>

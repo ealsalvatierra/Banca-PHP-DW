@@ -1,6 +1,6 @@
 <?php
 require 'verificar_usuario.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $no_cuenta = $_SESSION['no_cuenta'];
 
@@ -10,6 +10,7 @@ $stmt->execute();
 $resultado = $stmt->get_result();
 $cuenta = $resultado->fetch_assoc();
 $stmt->close();
+        limpiar_resultados($mysqli);
 
 $saldo = $cuenta ? $cuenta['saldo'] : 0;
 

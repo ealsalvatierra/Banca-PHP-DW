@@ -1,6 +1,6 @@
 <?php
 require 'verificar_usuario.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $correo = $_SESSION['usuario'];
 $origen = $_SESSION['no_cuenta'];
@@ -9,15 +9,16 @@ $mensaje = '';
 $tipoMensaje = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id_tercero = trim($_POST['id_tercero'] ?? '');
-    $monto = trim($_POST['monto'] ?? '');
+    validar_csrf();
+    $id_tercero = entrada_texto('id_tercero');
+    $monto = entrada_texto('monto');
 
     $errores = [];
 
     if ($id_tercero === '' || !ctype_digit($id_tercero)) {
         $errores[] = 'Debe seleccionar una cuenta de tercero.';
     }
-    if ($monto === '' || !is_numeric($monto) || $monto <= 0) {
+    if (!monto_valido($monto)) {
         $errores[] = 'La cantidad a transferir debe ser un número mayor a cero.';
     }
 
@@ -30,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $tercero = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
         if (!$tercero) {
             $errores[] = 'La cuenta de tercero seleccionada no es válida.';
@@ -47,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
         if ($fila['total'] >= $tercero['max_transacciones']) {
             $errores[] = 'Ya alcanzó la cantidad máxima de transferencias diarias para esta cuenta.';
@@ -60,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $cuenta = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
         if (!$cuenta || $cuenta['saldo'] < $monto) {
             $errores[] = 'Saldo insuficiente para realizar la transferencia.';
@@ -67,19 +71,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errores)) {
-        $monto_num = (float)$monto;
+        $monto_num = $monto;
         $destino = $tercero['no_cuenta'];
         $stmt = $mysqli->prepare('CALL sp_transferir(?, ?, ?)');
-        $stmt->bind_param('ssd', $origen, $destino, $monto_num);
+        $stmt->bind_param('sis', $correo, $id_num, $monto_num);
 
         if ($stmt->execute()) {
             $mensaje = 'Transferencia realizada correctamente.';
             $tipoMensaje = 'mensaje-exito';
         } else {
-            $mensaje = 'Error al realizar la transferencia: ' . $stmt->error;
+            $mensaje = 'Error al realizar la transferencia: ' . error_operacion($stmt);
             $tipoMensaje = 'mensaje-error';
         }
         $stmt->close();
+        limpiar_resultados($mysqli);
     } else {
         $mensaje = implode('<br>', $errores);
         $tipoMensaje = 'mensaje-error';
@@ -103,6 +108,7 @@ require 'cabecera.php';
     <h2>Transferir a cuenta de tercero</h2>
     <?php if ($resultado && $resultado->num_rows > 0): ?>
     <form action="usuario_transferencia.php" method="POST">
+        <?= csrf_campo() ?>
         <div class="field">
             <label for="id_tercero">Cuenta de tercero</label>
             <select id="id_tercero" name="id_tercero" required>

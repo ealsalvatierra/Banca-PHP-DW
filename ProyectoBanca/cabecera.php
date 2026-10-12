@@ -72,7 +72,7 @@ $nombre = $_SESSION['nombre'];
         </nav>
         <div class="topnav-right">
             <span class="topnav-user"><?= htmlspecialchars($nombre) ?></span>
-            <a href="logout.php">Salir</a>
+            <form action="logout.php" method="POST" class="logout-form"><?= csrf_campo() ?><button type="submit" class="logout-button">Salir</button></form>
         </div>
     </div>
 </header>

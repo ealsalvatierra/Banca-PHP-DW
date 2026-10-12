@@ -8,3 +8,9 @@
 .idea/
 Thumbs.db
 .DS_Store
+*.[mM][dD]
+.agents/
+docs/
+outputs/
+work/
+backups/

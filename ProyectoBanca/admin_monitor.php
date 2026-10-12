@@ -1,6 +1,6 @@
 <?php
 require 'verificar_admin.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $resultado = $mysqli->query('CALL sp_monitor()');
 $datos = $resultado->fetch_assoc();

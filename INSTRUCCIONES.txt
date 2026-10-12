@@ -1,0 +1,27 @@
+Banco UMG — proyecto académico PHP/MySQL
+
+Requiere PHP 7.4 o superior con mysqli/mysqlnd y MySQL 5.7 o MariaDB compatible.
+Copiar ProyectoBanca dentro del directorio público de Apache.
+
+Instalación nueva: importar ProyectoBanca/db.sql.
+Instalación existente: respaldar la base y aplicar únicamente
+ProyectoBanca/migrations/001_seguridad_y_transacciones.sql.
+La migración conserva los registros, convierte las tablas a InnoDB,
+amplía el espacio para hashes y sustituye los procedimientos afectados.
+
+La aplicación usa banca_db en 127.0.0.1 por defecto. Puede configurarse con
+BANCA_DB_HOST, BANCA_DB_PORT, BANCA_DB_USER, BANCA_DB_PASSWORD y BANCA_DB_NAME
+en el entorno del servidor. No guardar secretos en archivos versionados.
+Abrir http://localhost/ProyectoBanca/.
+
+El administrador de demostración inicial es admin / admin123.
+Cambiar las credenciales de demostración antes de exponer la aplicación.
+Las cuentas existentes conservan su clave; al autenticar se sustituye el
+valor antiguo en texto plano por un hash. Nuevas claves: entre 8 y 72 bytes.
+
+QA efectuado: inspección sintáctica PHP y regresión estática del código.
+La aprobación de operaciones y concurrencia requiere pruebas funcionales
+con PHP/MySQL y datos ficticios dentro de un entorno aislado.
+
+Regla del repositorio: ningún archivo .md se versiona, sin importar mayúsculas.
+AGENTS.md, skills y notas de QA se mantienen localmente.

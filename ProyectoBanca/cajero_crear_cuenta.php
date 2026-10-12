@@ -1,16 +1,17 @@
 <?php
 require 'verificar_cajero.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $mensaje = '';
 $tipoMensaje = '';
 $nombre = $no_cuenta = $dpi = $monto = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombre = trim($_POST['nombre'] ?? '');
-    $no_cuenta = trim($_POST['no_cuenta'] ?? '');
-    $dpi = trim($_POST['dpi'] ?? '');
-    $monto = trim($_POST['monto'] ?? '');
+    validar_csrf();
+    $nombre = entrada_texto('nombre');
+    $no_cuenta = entrada_texto('no_cuenta');
+    $dpi = entrada_texto('dpi');
+    $monto = entrada_texto('monto');
 
     $errores = [];
 
@@ -23,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($dpi === '' || !ctype_digit($dpi) || strlen($dpi) != 13) {
         $errores[] = 'El DPI es obligatorio y debe tener 13 dígitos.';
     }
-    if ($monto === '' || !is_numeric($monto) || $monto < 0) {
+    if (!monto_valido($monto, true)) {
         $errores[] = 'El monto inicial es obligatorio y debe ser un número mayor o igual a cero.';
     }
 
@@ -34,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         $fila = $resultado->fetch_assoc();
         $stmt->close();
+        limpiar_resultados($mysqli);
 
         if ($fila['total'] > 0) {
             $errores[] = 'Ya existe una cuenta con ese número.';
@@ -41,19 +43,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errores)) {
-        $monto_num = (float)$monto;
+        $monto_num = $monto;
         $stmt = $mysqli->prepare('CALL sp_cuenta_crear(?, ?, ?, ?)');
-        $stmt->bind_param('sssd', $no_cuenta, $nombre, $dpi, $monto_num);
+        $stmt->bind_param('ssss', $no_cuenta, $nombre, $dpi, $monto_num);
 
         if ($stmt->execute()) {
             $mensaje = 'Cuenta creada correctamente.';
             $tipoMensaje = 'mensaje-exito';
             $nombre = $no_cuenta = $dpi = $monto = '';
         } else {
-            $mensaje = 'Error al crear la cuenta: ' . $stmt->error;
+            $mensaje = 'Error al crear la cuenta: ' . error_operacion($stmt);
             $tipoMensaje = 'mensaje-error';
         }
         $stmt->close();
+        limpiar_resultados($mysqli);
     } else {
         $mensaje = implode('<br>', $errores);
         $tipoMensaje = 'mensaje-error';
@@ -71,6 +74,7 @@ require 'cabecera.php';
 <div class="card">
     <h2>Nueva cuenta monetaria</h2>
     <form action="cajero_crear_cuenta.php" method="POST">
+        <?= csrf_campo() ?>
         <div class="field">
             <label for="nombre">Nombre de la cuenta</label>
             <input type="text" id="nombre" name="nombre" maxlength="60" required value="<?= htmlspecialchars($nombre) ?>">

@@ -1,16 +1,22 @@
 <?php
 require 'verificar_admin.php';
-require 'conexion.php';
+require_once 'conexion.php';
 
 $mensaje = '';
 $tipoMensaje = '';
 $nombre = $usuario = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
+    validar_csrf();
 
     if ($_POST['accion'] === 'estado') {
-        $usuarioCajero = trim($_POST['usuario'] ?? '');
-        $activo = (int)($_POST['activo'] ?? 0);
+        $usuarioCajero = entrada_texto('usuario');
+        $estado = entrada_texto('activo');
+        if (!in_array($estado, ['0', '1'], true)) {
+            http_response_code(400);
+            exit('Estado de cajero inválido.');
+        }
+        $activo = (int)$estado;
 
         $stmt = $mysqli->prepare('CALL sp_cajero_cambiar_estado(?, ?)');
         $stmt->bind_param('si', $usuarioCajero, $activo);
@@ -19,16 +25,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             $mensaje = $activo ? 'Cajero desbloqueado correctamente.' : 'Cajero bloqueado correctamente.';
             $tipoMensaje = 'mensaje-exito';
         } else {
-            $mensaje = 'Error al actualizar el cajero: ' . $stmt->error;
+            $mensaje = 'Error al actualizar el cajero: ' . error_operacion($stmt);
             $tipoMensaje = 'mensaje-error';
         }
         $stmt->close();
+        limpiar_resultados($mysqli);
 
     } elseif ($_POST['accion'] === 'agregar') {
-        $nombre = trim($_POST['nombre'] ?? '');
-        $usuario = trim($_POST['usuario'] ?? '');
-        $clave = trim($_POST['clave'] ?? '');
-        $confirmar = trim($_POST['confirmar'] ?? '');
+        $nombre = entrada_texto('nombre');
+        $usuario = entrada_texto('usuario');
+        $clave = entrada_texto('clave');
+        $confirmar = entrada_texto('confirmar');
 
         $errores = [];
 
@@ -38,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         if ($usuario === '' || strlen($usuario) > 50) {
             $errores[] = 'El usuario es obligatorio y debe tener máximo 50 caracteres.';
         }
-        if ($clave === '' || strlen($clave) > 20) {
-            $errores[] = 'La clave es obligatoria y debe tener máximo 20 caracteres.';
+        if (strlen($clave) < 8 || strlen($clave) > 72) {
+            $errores[] = 'La clave debe tener entre 8 y 72 caracteres.';
         }
         if ($clave !== $confirmar) {
             $errores[] = 'La clave y su confirmación no coinciden.';
@@ -52,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             $resultado = $stmt->get_result();
             $fila = $resultado->fetch_assoc();
             $stmt->close();
+        limpiar_resultados($mysqli);
 
             if ($fila['total'] > 0) {
                 $errores[] = 'Ya existe un cajero con ese usuario.';
@@ -59,7 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         }
 
         if (empty($errores)) {
-            $stmt = $mysqli->prepare('CALL sp_cajero_insertar(?, ?, ?)');
+            $clave = password_hash($clave, PASSWORD_DEFAULT);
+        $stmt = $mysqli->prepare('CALL sp_cajero_insertar(?, ?, ?)');
             $stmt->bind_param('sss', $usuario, $clave, $nombre);
 
             if ($stmt->execute()) {
@@ -67,10 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 $tipoMensaje = 'mensaje-exito';
                 $nombre = $usuario = '';
             } else {
-                $mensaje = 'Error al agregar el cajero: ' . $stmt->error;
+                $mensaje = 'Error al agregar el cajero: ' . error_operacion($stmt);
                 $tipoMensaje = 'mensaje-error';
             }
             $stmt->close();
+        limpiar_resultados($mysqli);
         } else {
             $mensaje = implode('<br>', $errores);
             $tipoMensaje = 'mensaje-error';
@@ -109,6 +119,7 @@ require 'cabecera.php';
             </td>
             <td>
                 <form action="admin_cajeros.php" method="POST" style="margin:0;">
+        <?= csrf_campo() ?>
                     <input type="hidden" name="accion" value="estado">
                     <input type="hidden" name="usuario" value="<?= htmlspecialchars($fila['usuario']) ?>">
                     <input type="hidden" name="activo" value="<?= $fila['activo'] ? 0 : 1 ?>">
@@ -126,6 +137,7 @@ require 'cabecera.php';
 <div class="card">
     <h2>Agregar cajero</h2>
     <form action="admin_cajeros.php" method="POST">
+        <?= csrf_campo() ?>
         <input type="hidden" name="accion" value="agregar">
 
         <div class="field">
@@ -138,11 +150,11 @@ require 'cabecera.php';
         </div>
         <div class="field">
             <label for="clave">Clave</label>
-            <input type="password" id="clave" name="clave" maxlength="20" required>
+            <input type="password" id="clave" name="clave" maxlength="72" required>
         </div>
         <div class="field">
             <label for="confirmar">Confirmación de clave</label>
-            <input type="password" id="confirmar" name="confirmar" maxlength="20" required>
+            <input type="password" id="confirmar" name="confirmar" maxlength="72" required>
         </div>
 
         <input type="submit" value="Agregar cajero">

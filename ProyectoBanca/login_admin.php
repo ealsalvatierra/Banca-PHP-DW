@@ -1,30 +1,25 @@
 <?php
-session_start();
-require 'conexion.php';
-
+require_once 'seguridad.php';
+require_once 'conexion.php';
 $mensaje = '';
 $usuario = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $usuario = trim($_POST['usuario'] ?? '');
-    $clave = trim($_POST['clave'] ?? '');
-
-    $stmt = $mysqli->prepare('CALL sp_login_admin(?, ?)');
-    $stmt->bind_param('ss', $usuario, $clave);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    $fila = $resultado->fetch_assoc();
-    $stmt->close();
-
+    validar_csrf();
+    $usuario = entrada_texto('usuario');
+    $clave = entrada_texto('clave');
+    $fila = autenticar($mysqli, 'admin', $usuario, $clave);
     if ($fila) {
+        session_regenerate_id(true);
+        $_SESSION = [];
         $_SESSION['rol'] = 'admin';
         $_SESSION['usuario'] = $usuario;
         $_SESSION['nombre'] = $fila['nombre_completo'];
+        $_SESSION['autenticada'] = true;
+        $_SESSION['ultima_actividad'] = time();
         header('Location: admin_panel.php');
         exit;
-    } else {
-        $mensaje = 'Usuario o contraseña incorrectos.';
     }
+    $mensaje = 'Usuario o contraseña incorrectos.';
 }
 ?>
 <!DOCTYPE html>
@@ -50,13 +45,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form action="login_admin.php" method="POST">
+        <?= csrf_campo() ?>
             <div class="field">
                 <label for="usuario">Usuario</label>
                 <input type="text" id="usuario" name="usuario" maxlength="50" required value="<?= htmlspecialchars($usuario) ?>">
             </div>
             <div class="field">
                 <label for="clave">Contraseña</label>
-                <input type="password" id="clave" name="clave" maxlength="20" required>
+                <input type="password" id="clave" name="clave" maxlength="72" required>
             </div>
             <input type="submit" class="full" value="Ingresar">
         </form>

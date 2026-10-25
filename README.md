@@ -4,6 +4,14 @@ Sistema web bancario desarrollado en **PHP** con persistencia en **MySQL/MariaDB
 
 ---
 
+## 🌐 Sitio en Línea (Despliegue Público)
+
+El proyecto se encuentra totalmente operativo y desplegado en un entorno de hosting público:
+
+* **URL del Proyecto:**(http://bancadw.infinityfree.me)
+
+---
+
 ## 📌 NOTA IMPORTANTE ANTES DE COMENZAR
 
 Revisa primero el archivo **`INSTRUCCIONES.txt`** incluido en la raíz de este repositorio, donde se detallan paso a paso las instrucciones específicas y requisitos para desplegar el proyecto correctamente en tu entorno local.

@@ -3,11 +3,15 @@ Banco UMG — proyecto académico PHP/MySQL
 Requiere PHP 7.4 o superior con mysqli/mysqlnd y MySQL 5.7 o MariaDB compatible.
 Copiar ProyectoBanca dentro del directorio público de Apache.
 
-Instalación nueva: importar ProyectoBanca/db.sql.
+Instalación nueva: Importar el archivo unificado de creacion_y_migracion.sql 
+dentro del SQL de phpMyAdmin, ya que esta cuenta con la creación y migración
+de los registros.
+
+// Instalación Antigua: importar ProyectoBanca/db.sql.
 Instalación existente: respaldar la base y aplicar únicamente
 ProyectoBanca/migrations/001_seguridad_y_transacciones.sql.
 La migración conserva los registros, convierte las tablas a InnoDB,
-amplía el espacio para hashes y sustituye los procedimientos afectados.
+amplía el espacio para hashes y sustituye los procedimientos afectados. //
 
 La aplicación usa banca_db en 127.0.0.1 por defecto. Puede configurarse con
 BANCA_DB_HOST, BANCA_DB_PORT, BANCA_DB_USER, BANCA_DB_PASSWORD y BANCA_DB_NAME

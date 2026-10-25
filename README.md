@@ -8,7 +8,7 @@ Sistema web bancario desarrollado en **PHP** con persistencia en **MySQL/MariaDB
 
 El proyecto se encuentra totalmente operativo y desplegado en un entorno de hosting público:
 
-* **URL del Proyecto:**(http://bancadw.infinityfree.me)
+* **URL del Proyecto:** http://bancadw.infinityfree.me
 
 ---
 

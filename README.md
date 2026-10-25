@@ -4,7 +4,7 @@ Sistema web bancario desarrollado en **PHP** con persistencia en **MySQL/MariaDB
 
 ---
 
-## 📌 NOTA IMPORTANTE ANTES DE COMENSAR
+## 📌 NOTA IMPORTANTE ANTES DE COMENZAR
 
 Revisa primero el archivo **`INSTRUCCIONES.txt`** incluido en la raíz de este repositorio, donde se detallan paso a paso las instrucciones específicas y requisitos para desplegar el proyecto correctamente en tu entorno local.
 

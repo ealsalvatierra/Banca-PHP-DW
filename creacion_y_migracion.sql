@@ -430,3 +430,14 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+/* Agregar tabla para almacenar logs del servidor web al final del script de creación y migración
+CREATE TABLE IF NOT EXISTS server_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_origen VARCHAR(45) NOT NULL,
+    pagina_solicitada VARCHAR(255) NOT NULL,
+    metodo VARCHAR(10) NOT NULL,
+    codigo_respuesta INT NOT NULL DEFAULT 200,
+    fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+*/

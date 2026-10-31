@@ -21,7 +21,7 @@ El repositorio se encuentra organizado en dos entornos principales:
   - Implementa un middleware de registro de tráfico HTTP en tiempo real integrado en MySQL (tabla server_logs).
   - Incluye el panel visual logs.php con codificación de colores para estados HTTP.
   - Reemplaza los procedimientos almacenados (CALL) por subconsultas SQL directas compatibles con el hosting compartido.
-  - Incluye el script de base de datos adaptado (schema.sql).
+  - Incluye el script de base de datos adaptado (banca_db.sql).
 
 * /Local: Contiene la versión original de desarrollo diseñada para entornos locales XAMPP.
   - Incluye el archivo INSTRUCCIONES.txt con la guía de configuración local.

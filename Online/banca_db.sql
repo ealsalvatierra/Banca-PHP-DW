@@ -73,23 +73,3 @@ CREATE TABLE server_logs (
     codigo_respuesta INT NOT NULL DEFAULT 200,
     fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ============================================================================
--- DATOS INICIALES DE PRUEBA / ADMINISTRADOR POR DEFECTO
--- ============================================================================
-
--- Usuario Administrador (Contraseña: admin123 -> Hash de prueba o texto según tu login)
-INSERT INTO usuarios (nombre, email, password, rol) VALUES 
-('Administrador UMG', 'admin@bancaweb.com', '$2y$10$e.g.hash.de.ejemplo.admin123', 'admin'),
-('Cajero 1', 'cajero1@bancaweb.com', '$2y$10$e.g.hash.de.ejemplo.cajero123', 'cajero'),
-('Cliente Ejemplo', 'cliente@bancaweb.com', '$2y$10$e.g.hash.de.ejemplo.cliente123', 'usuario');
-
--- Cuentas de ejemplo
-INSERT INTO cuentas (numero_cuenta, usuario_id, saldo, tipo_cuenta) VALUES 
-('3001234567', 3, 1500.00, 'MONETARIA'),
-('3009876543', 3, 500.00, 'AHORRO');
-
--- Movimientos iniciales para generar gráficos de prueba en admin_monitor.php
-INSERT INTO movimientos (cuenta_id, tipo_mov, monto, concepto) VALUES 
-(1, 'CREDITO', 2000.00, 'Apertura de cuenta'),
-(1, 'DEBITO', 500.00, 'Retiro en cajero');

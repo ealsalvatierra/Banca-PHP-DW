@@ -1,6 +1,6 @@
 # Sistema de Banca en Línea - PHP & MySQL
 
-Sistema web bancario desarrollado en **PHP** con persistencia en **MySQL/MariaDB**, administrado a través de **XAMPP / phpMyAdmin**. Incluye gestión de roles, transacciones seguras mediante procedimientos almacenados y control de operaciones diarias.
+Sistema web bancario desarrollado en PHP con persistencia en MySQL/MariaDB. Incluye gestión de roles (Administrador, Cajero, Cliente), transacciones bancarias, control de operaciones diarias y un módulo de monitoreo de tráfico HTTP en tiempo real.
 
 ---
 
@@ -8,41 +8,52 @@ Sistema web bancario desarrollado en **PHP** con persistencia en **MySQL/MariaDB
 
 El proyecto se encuentra totalmente operativo y desplegado en un entorno de hosting público:
 
-* **URL del Proyecto:** http://bancadw.infinityfree.me
+* URL del Proyecto: http://bancadw.infinityfree.me
+* Panel de Logs del Servidor: Accesible desde el menú del Administrador en la sección "Logs Servidor".
 
 ---
 
-##  NOTA IMPORTANTE ANTES DE COMENZAR
+## Estructura del Repositorio
 
-Revisa primero el archivo **`INSTRUCCIONES.txt`** incluido en la raíz de este repositorio, donde se detallan paso a paso las instrucciones específicas y requisitos para desplegar el proyecto correctamente en tu entorno local.
+El repositorio se encuentra organizado en dos entornos principales:
+
+* /Online: Contiene la versión de código fuente optimizada y desplegada en InfinityFree.
+  - Implementa un middleware de registro de tráfico HTTP en tiempo real integrado en MySQL (tabla server_logs).
+  - Incluye el panel visual logs.php con codificación de colores para estados HTTP.
+  - Reemplaza los procedimientos almacenados (CALL) por subconsultas SQL directas compatibles con el hosting compartido.
+  - Incluye el script de base de datos adaptado (schema.sql).
+
+* /Local: Contiene la versión original de desarrollo diseñada para entornos locales XAMPP.
+  - Incluye el archivo INSTRUCCIONES.txt con la guía de configuración local.
+  - Incluye el script SQL original (creacion_y_migracion.sql) con procedimientos almacenados (sp_monitor, sp_deposito, etc.).
+  - Contiene los archivos del proyecto original (/ProyectoBanca) y las pruebas unitarias (/tests).
 
 ---
 
-## Requisitos del Sistema
+## Requisitos del Sistema (Entorno Local)
 
-- **XAMPP** (Apache 2.4+ / PHP 8.x / MySQL 8.x o MariaDB)
-- **Navegador Web** (Chrome, Edge, Firefox)
+- XAMPP (Apache 2.4+ / PHP 8.x / MySQL 8.x o MariaDB)
+- Navegador Web (Chrome, Edge, Firefox)
 
 ---
 
 ## Configuración de la Base de Datos
 
-1. Abre **phpMyAdmin** (`http://localhost/phpmyadmin/`).
-2. Ve a la pestaña **SQL** en el panel superior.
-3. Copia y ejecuta el script completo contenido en el archivo `db.sql` del repositorio.
+### Para Despliegue en Servidor / Online (InfinityFree)
+1. Accede a phpMyAdmin desde el panel de control de InfinityFree.
+2. Importa y ejecuta el script ubicado en Online/banca_db.sql.
+3. Este script creará la estructura de tablas base (usuarios, cuentas, movimientos, transferencias_terceros) y la tabla de monitoreo server_logs.
 
-Este script realizará lo siguiente de forma automática:
-- Crear la base de datos `banca_db` con codificación `utf8mb4`.
-- Generar la estructura de las 7 tablas base (`administradores`, `cajeros`, `cuentas`, `usuarios`, `cuentas_terceros`, `movimientos`, `transferencias`).
-- Insertar el usuario administrador inicial.
-- Crear los índices de optimización e integridad de datos.
-- Registrar los **Procedimientos Almacenados** para transacciones seguras (`sp_deposito`, `sp_retiro`, `sp_transferir`, reportes, etc.).
+### Para Despliegue Local (XAMPP)
+1. Abre phpMyAdmin local (http://localhost/phpmyadmin/).
+2. Copia y ejecuta el script ubicado en Local/creacion_y_migracion.sql.
+3. Este script generará la estructura base junto con los procedimientos almacenados requeridos para el entorno local.
 
 ---
 
 ## Instalación y Despliegue Local
 
-1. Consulta el archivo **`INSTRUCCIONES.txt`** para la guía paso a paso.
-2. Clona o descarga este repositorio dentro del directorio público de Apache:
+1. Consulta el archivo Local/INSTRUCCIONES.txt para la guía detallada de instalación.
+2. Clona este repositorio dentro del directorio público de Apache:
    ```bash
-   C:\xampp\htdocs\Banca-PHP-DW
+   git clone [https://github.com/ealsalvatierra/Banca-PHP-DW.git](https://github.com/ealsalvatierra/Banca-PHP-DW.git) C:\xampp\htdocs\Banca-PHP-DW

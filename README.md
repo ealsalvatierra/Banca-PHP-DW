@@ -56,4 +56,5 @@ El repositorio se encuentra organizado en dos entornos principales:
 1. Consulta el archivo Local/INSTRUCCIONES.txt para la guía detallada de instalación.
 2. Clona este repositorio dentro del directorio público de Apache:
    ```bash
-   git clone https://github.com/ealsalvatierra/Banca-PHP-DW.git C:\xampp\htdocs\Banca-PHP-DW
+   cd /c/xampp/htdocs
+   git clone https://github.com/ealsalvatierra/Banca-PHP-DW.git

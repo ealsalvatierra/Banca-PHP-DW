@@ -4,7 +4,7 @@ Sistema web bancario desarrollado en **PHP** con persistencia en **MySQL/MariaDB
 
 ---
 
-## 🌐 Sitio en Línea (Despliegue Público)
+## Sitio en Línea (Despliegue Público)
 
 El proyecto se encuentra totalmente operativo y desplegado en un entorno de hosting público:
 
@@ -12,20 +12,20 @@ El proyecto se encuentra totalmente operativo y desplegado en un entorno de host
 
 ---
 
-## 📌 NOTA IMPORTANTE ANTES DE COMENZAR
+##  NOTA IMPORTANTE ANTES DE COMENZAR
 
 Revisa primero el archivo **`INSTRUCCIONES.txt`** incluido en la raíz de este repositorio, donde se detallan paso a paso las instrucciones específicas y requisitos para desplegar el proyecto correctamente en tu entorno local.
 
 ---
 
-## 🚀 Requisitos del Sistema
+## Requisitos del Sistema
 
 - **XAMPP** (Apache 2.4+ / PHP 8.x / MySQL 8.x o MariaDB)
 - **Navegador Web** (Chrome, Edge, Firefox)
 
 ---
 
-## 🗄️ Configuración de la Base de Datos
+## Configuración de la Base de Datos
 
 1. Abre **phpMyAdmin** (`http://localhost/phpmyadmin/`).
 2. Ve a la pestaña **SQL** en el panel superior.
@@ -40,7 +40,7 @@ Este script realizará lo siguiente de forma automática:
 
 ---
 
-## 🛠️ Instalación y Despliegue Local
+## Instalación y Despliegue Local
 
 1. Consulta el archivo **`INSTRUCCIONES.txt`** para la guía paso a paso.
 2. Clona o descarga este repositorio dentro del directorio público de Apache:

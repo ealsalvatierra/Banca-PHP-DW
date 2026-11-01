@@ -1,14 +1,18 @@
 <?php
 require_once 'seguridad.php';
+require_once 'procedimientos.php';
 mysqli_report(MYSQLI_REPORT_OFF);
 
-$host     = getenv('BANCA_DB_HOST')     ?: 'sql200.infinityfree.com';
-$user     = getenv('BANCA_DB_USER')     ?: 'if0_43265572';
-$password = getenv('BANCA_DB_PASSWORD') ?: 'TuContraseñaInfinity';
-$database = getenv('BANCA_DB_NAME')     ?: 'if0_43265572_bancadw';
-$port     = (int)(getenv('BANCA_DB_PORT') ?: 3306);
+// Las credenciales del hosting van en config.php (no se versiona). Ver config.example.php.
+$config = is_file(__DIR__ . '/config.php') ? require __DIR__ . '/config.php' : [];
 
-$mysqli = new mysqli($host, $user, $password, $database, $port);
+$host     = $config['host']     ?? (getenv('BANCA_DB_HOST') ?: '127.0.0.1');
+$user     = $config['user']     ?? (getenv('BANCA_DB_USER') ?: 'root');
+$password = $config['password'] ?? (getenv('BANCA_DB_PASSWORD') ?: '');
+$database = $config['database'] ?? (getenv('BANCA_DB_NAME') ?: 'banca_db');
+$port     = (int)($config['port'] ?? (getenv('BANCA_DB_PORT') ?: 3306));
+
+$mysqli = new BancaDB($host, $user, $password, $database, $port);
 
 if ($mysqli->connect_error || !$mysqli->set_charset('utf8mb4')) {
     http_response_code(503);
@@ -16,19 +20,24 @@ if ($mysqli->connect_error || !$mysqli->set_charset('utf8mb4')) {
 }
 
 // ============================================================================
-// REGISTRADOR AUTOMÁTICO DE TRÁFICO EN TIEMPO REAL
+// REGISTRADOR DE TRÁFICO EN TIEMPO REAL
+// Se ejecuta al terminar la petición para guardar el código HTTP final
+// (200, 302 de redirección, 403, 500, etc.).
 // ============================================================================
-$ip     = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-$pagina = $_SERVER['REQUEST_URI'] ?? '/';
-$metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$codigo = http_response_code() ?: 200;
-
-// Registrar solo si no es la propia página de logs
-if (strpos($pagina, 'logs.php') === false) {
-    $stmtLog = $mysqli->prepare("INSERT INTO server_logs (ip_origen, pagina_solicitada, metodo, codigo_respuesta) VALUES (?, ?, ?, ?)");
-    if ($stmtLog) {
-        $stmtLog->bind_param("sssi", $ip, $pagina, $metodo, $codigo);
-        $stmtLog->execute();
-        $stmtLog->close();
+register_shutdown_function(function () use ($mysqli) {
+    $pagina = $_SERVER['REQUEST_URI'] ?? '/';
+    if (strpos($pagina, 'logs.php') !== false) {
+        return;
     }
-}
+    $ip     = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $error  = error_get_last();
+    $codigo = ($error && in_array($error['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR], true))
+        ? 500 : (http_response_code() ?: 200);
+    $stmt = $mysqli->prepare('INSERT INTO server_logs (ip_origen, pagina_solicitada, metodo, codigo_respuesta) VALUES (?, ?, ?, ?)');
+    if ($stmt) {
+        $stmt->bind_param('sssi', $ip, $pagina, $metodo, $codigo);
+        $stmt->execute();
+        $stmt->close();
+    }
+});

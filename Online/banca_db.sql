@@ -1,75 +1,89 @@
 -- ============================================================================
--- SCRIPT DE BASE DE DATOS - BANCA EN LÍNEA UMG
--- Optimizado para InfinityFree (Sin Stored Procedures ni Triggers)
+-- BANCO UMG - Script de base de datos para el hosting (InfinityFree)
+-- Mismas siete tablas que Local/creacion_y_migracion.sql + server_logs.
+-- InfinityFree no permite CREATE PROCEDURE: los procedimientos se implementan
+-- en procedimientos.php con los mismos nombres, parámetros y validaciones.
+-- Ejecutar en phpMyAdmin con la base del hosting seleccionada.
+-- ATENCIÓN: elimina y vuelve a crear las tablas (deja la BD en blanco).
 -- ============================================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS server_logs;
-DROP TABLE IF EXISTS transferencias_terceros;
+DROP TABLE IF EXISTS transferencias;
 DROP TABLE IF EXISTS movimientos;
-DROP TABLE IF EXISTS cuentas;
+DROP TABLE IF EXISTS cuentas_terceros;
 DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS cuentas;
+DROP TABLE IF EXISTS cajeros;
+DROP TABLE IF EXISTS administradores;
 SET FOREIGN_KEY_CHECKS = 1;
 
--- ----------------------------------------------------------------------------
--- 1. Tabla: usuarios
--- ----------------------------------------------------------------------------
-CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    rol ENUM('admin', 'cajero', 'usuario') NOT NULL DEFAULT 'usuario',
-    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE administradores (
+    usuario VARCHAR(50) NOT NULL PRIMARY KEY,
+    clave VARCHAR(255) NOT NULL,
+    nombre_completo VARCHAR(60) NOT NULL
+) ENGINE=InnoDB;
 
--- ----------------------------------------------------------------------------
--- 2. Tabla: cuentas
--- ----------------------------------------------------------------------------
+INSERT IGNORE INTO administradores (usuario, clave, nombre_completo) VALUES
+('admin', '$2y$10$2S93nf/nHqwrDFalnwk1iOXUJOp6IKsDN3Uv.nweg0PJr2M/fsVLq', 'Administrador del Sistema');
+
+CREATE TABLE cajeros (
+    usuario VARCHAR(50) NOT NULL PRIMARY KEY,
+    clave VARCHAR(255) NOT NULL,
+    nombre_completo VARCHAR(60) NOT NULL,
+    activo INT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+
 CREATE TABLE cuentas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    numero_cuenta VARCHAR(20) NOT NULL UNIQUE,
-    usuario_id INT NOT NULL,
-    saldo DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-    tipo_cuenta ENUM('AHORRO', 'MONETARIA') NOT NULL DEFAULT 'MONETARIA',
-    estado ENUM('ACTIVA', 'INACTIVA', 'BLOQUEADA') NOT NULL DEFAULT 'ACTIVA',
-    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    no_cuenta VARCHAR(20) NOT NULL PRIMARY KEY,
+    nombre VARCHAR(60) NOT NULL,
+    dpi VARCHAR(13) NOT NULL,
+    saldo DECIMAL(12,2) NOT NULL DEFAULT 0,
+    fecha_creacion DATETIME NOT NULL
+) ENGINE=InnoDB;
 
--- ----------------------------------------------------------------------------
--- 3. Tabla: movimientos (Depósitos, Retiros y Transferencias)
--- ----------------------------------------------------------------------------
+CREATE TABLE usuarios (
+    correo VARCHAR(50) NOT NULL PRIMARY KEY,
+    clave VARCHAR(255) NOT NULL,
+    no_cuenta VARCHAR(20) NOT NULL,
+    dpi VARCHAR(13) NOT NULL,
+    fecha_registro DATETIME NOT NULL,
+    UNIQUE KEY uq_usuarios_cuenta (no_cuenta)
+) ENGINE=InnoDB;
+
+CREATE TABLE cuentas_terceros (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    correo_usuario VARCHAR(50) NOT NULL,
+    no_cuenta VARCHAR(20) NOT NULL,
+    monto_maximo DECIMAL(12,2) NOT NULL,
+    max_transacciones INT NOT NULL,
+    alias VARCHAR(40) NOT NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE movimientos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cuenta_id INT NOT NULL,
-    tipo_mov ENUM('CREDITO', 'DEBITO') NOT NULL,
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    no_cuenta VARCHAR(20) NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
     monto DECIMAL(12,2) NOT NULL,
-    concepto VARCHAR(255) NOT NULL,
-    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (cuenta_id) REFERENCES cuentas(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    tipo_mov VARCHAR(10) NOT NULL,
+    descripcion VARCHAR(100) NOT NULL,
+    fecha DATETIME NOT NULL
+) ENGINE=InnoDB;
 
--- ----------------------------------------------------------------------------
--- 4. Tabla: transferencias_terceros (Cuentas asociadas por clientes)
--- ----------------------------------------------------------------------------
-CREATE TABLE transferencias_terceros (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
+CREATE TABLE transferencias (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    cuenta_origen VARCHAR(20) NOT NULL,
     cuenta_destino VARCHAR(20) NOT NULL,
-    alias VARCHAR(50) NOT NULL,
-    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    monto DECIMAL(12,2) NOT NULL,
+    fecha DATETIME NOT NULL,
+    KEY ix_transferencias_diarias (cuenta_origen, cuenta_destino, fecha)
+) ENGINE=InnoDB;
 
--- ----------------------------------------------------------------------------
--- 5. Tabla: server_logs (Requisito de logs de Apache en tiempo real)
--- ----------------------------------------------------------------------------
 CREATE TABLE server_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     ip_origen VARCHAR(45) NOT NULL,
     pagina_solicitada VARCHAR(255) NOT NULL,
     metodo VARCHAR(10) NOT NULL,
     codigo_respuesta INT NOT NULL DEFAULT 200,
-    fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    fecha_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

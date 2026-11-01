@@ -1,0 +1,7 @@
+<FilesMatch "\.(sql|md|txt|json|cjs)$">
+    Require all denied
+</FilesMatch>
+<Files "config.php">
+    Require all denied
+</Files>
+Options -Indexes

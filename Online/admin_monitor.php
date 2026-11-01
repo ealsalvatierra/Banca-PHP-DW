@@ -2,21 +2,8 @@
 require 'verificar_admin.php';
 require_once 'conexion.php';
 
-// Consulta SQL directa sin usar Stored Procedures
-$query = "SELECT 
-    (SELECT COUNT(*) FROM cuentas WHERE DATE(fecha_creacion) = CURDATE()) AS cuentas_dia,
-    (SELECT COUNT(*) FROM usuarios WHERE DATE(fecha_registro) = CURDATE()) AS usuarios_dia,
-    (SELECT COUNT(*) FROM movimientos WHERE DATE(fecha) = CURDATE()) AS transacciones,
-    (SELECT COUNT(*) FROM movimientos WHERE tipo_mov = 'CREDITO' AND DATE(fecha) = CURDATE()) AS depositos,
-    (SELECT COUNT(*) FROM movimientos WHERE tipo_mov = 'DEBITO' AND DATE(fecha) = CURDATE()) AS retiros,
-    (SELECT IFNULL(SUM(monto), 0) FROM movimientos WHERE tipo_mov = 'CREDITO' AND DATE(fecha) = CURDATE()) AS monto_depositos,
-    (SELECT IFNULL(SUM(monto), 0) FROM movimientos WHERE tipo_mov = 'DEBITO' AND DATE(fecha) = CURDATE()) AS monto_retiros";
-
-$resultado = $mysqli->query($query);
-$datos = $resultado ? $resultado->fetch_assoc() : [
-    'cuentas_dia' => 0, 'usuarios_dia' => 0, 'transacciones' => 0,
-    'depositos' => 0, 'retiros' => 0, 'monto_depositos' => 0, 'monto_retiros' => 0
-];
+$resultado = $mysqli->query('CALL sp_monitor()');
+$datos = $resultado->fetch_assoc();
 
 $monto_depositos = (float)$datos['monto_depositos'];
 $monto_retiros = (float)$datos['monto_retiros'];
